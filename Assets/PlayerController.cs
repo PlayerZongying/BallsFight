@@ -9,6 +9,7 @@ using UnityEditor;
 using UnityEngine;
 using UnityEngine.InputSystem;
 using UnityEngine.Serialization;
+using Random = UnityEngine.Random;
 
 public class PlayerController : NetworkBehaviour
 {
@@ -20,6 +21,7 @@ public class PlayerController : NetworkBehaviour
     private InputAction move;
     public float speed = 5;
     private InputAction fire;
+    private InputAction type;
 
     public NetworkVariable<ushort> energy = new(10, NetworkVariableReadPermission.Everyone,
         NetworkVariableWritePermission.Server);
@@ -46,7 +48,9 @@ public class PlayerController : NetworkBehaviour
         playerControls = new BallsFightPlayerInputactions();
         move = playerControls.Player.Move;
         fire = playerControls.Player.Fire;
+        type = playerControls.Player.Type;
         fire.performed += Fire;
+        type.performed += Type;
     }
 
     private void OnEnable()
@@ -54,6 +58,7 @@ public class PlayerController : NetworkBehaviour
         // playerControls.Enable();
         move.Enable();
         fire.Enable();
+        type.Enable();
     }
 
     private void OnDisable()
@@ -61,15 +66,29 @@ public class PlayerController : NetworkBehaviour
         // playerControls.Disable();
         move.Disable();
         fire.Disable();
+        type.Disable();
     }
 
     // Start is called before the first frame update
     void Start()
     {
+        int intId = (int)NetworkObject.OwnerClientId;
+        if (intId < LevelLayout.Singleton.spawnPoints.Count)
+        {
+            rb.transform.position = LevelLayout.Singleton.spawnPoints[intId].position;
+        }
+        else
+        {
+            rb.transform.position = GetRandomPlaceOnPlane();
+        }
+
         playerCamera = Camera.main;
-        // rb.isKinematic = false;
+
+        GameManager.Singleton.players.Add(this);
+
         if (!IsOwner) return;
-        print(NetworkObject.OwnerClientId);
+        // print(NetworkObject.OwnerClientId);
+        ChatPanel.Singleton.pc = this;
     }
 
     // Update is called once per frame
@@ -105,7 +124,7 @@ public class PlayerController : NetworkBehaviour
     {
         if (!IsOwner) return;
         print("Fire!!!");
-        
+
         Vector3 mousePosition = Input.mousePosition;
         mousePosition.z = playerCamera.nearClipPlane;
         Vector3 worldPositionOnNearPlane = playerCamera.ScreenToWorldPoint(mousePosition);
@@ -113,10 +132,26 @@ public class PlayerController : NetworkBehaviour
         Vector3 fireDir = new Vector3(worldPositionOnNearPlane.x - rb.transform.position.x, 0,
             worldPositionOnNearPlane.z - rb.transform.position.z).normalized;
         Vector3 firePos = rb.transform.position + fireDir * energy.Value * 0.1f;
-        
-        
+
+
         SpawnBulletServerRpc(NetworkObject.OwnerClientId, fireDir, firePos);
         ReduceEnergyServerRpc(1);
+    }
+
+    private void Type(InputAction.CallbackContext context)
+    {
+        if (!IsOwner) return;
+        ChatPanel.Singleton.ToggleChatPanel();
+        if (ChatPanel.Singleton.chatPanel.gameObject.activeSelf)
+        {
+            move.Disable();
+            fire.Disable();
+        }
+        else
+        {
+            move.Enable();
+            fire.Enable();
+        }
     }
 
     [ServerRpc]
@@ -149,6 +184,8 @@ public class PlayerController : NetworkBehaviour
         {
             energy.Value = 0;
             rb.transform.localScale = Vector3.zero;
+            GameManager.Singleton.PlayerLoseServerRpc(NetworkObject.OwnerClientId);
+            GameManager.Singleton.CheckLastSurvivorServerRpc();
         }
     }
 
@@ -166,11 +203,19 @@ public class PlayerController : NetworkBehaviour
         {
             energy.Value = 0;
             rb.transform.localScale = Vector3.zero;
+            GameManager.Singleton.PlayerLoseServerRpc(NetworkObject.OwnerClientId);
+            GameManager.Singleton.CheckLastSurvivorServerRpc();
         }
     }
+
     void UpdateScale(ushort currentEnergy)
     {
         rb.transform.localScale = currentEnergy * 0.1f * Vector3.one;
     }
 
+    Vector3 GetRandomPlaceOnPlane()
+    {
+        Vector3 randomPlace = new Vector3(Random.Range(-20f, 20f), 0.5f, Random.Range(-20f, 20f));
+        return randomPlace;
+    }
 }
