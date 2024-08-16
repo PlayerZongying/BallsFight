@@ -15,7 +15,7 @@ GameObject:
   - component: {fileID: 6582698932117834863}
   m_Layer: 0
   m_Name: Player
-  m_TagString: Untagged
+  m_TagString: Player
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -102,9 +102,12 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   rb: {fileID: 3033057825270589663}
-  speed: 5
   inWorldCanvas: {fileID: 856941944004223432}
+  energyTMP: {fileID: 2747385956027752411}
   playerCamera: {fileID: 0}
+  speed: 5
+  energy:
+    m_InternalValue: 10
 --- !u!114 &6582698932117834863
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -389,7 +392,7 @@ GameObject:
   - component: {fileID: 6203688998857517015}
   m_Layer: 0
   m_Name: Sphere
-  m_TagString: Untagged
+  m_TagString: Player
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
