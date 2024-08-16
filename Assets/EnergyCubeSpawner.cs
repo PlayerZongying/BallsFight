@@ -31,12 +31,12 @@ public class EnergyCubeSpawner : NetworkBehaviour
     // Start is called before the first frame update
     void Start()
     {
-        NetworkManager.Singleton.OnServerStarted += SpawnFoodStart;
+        NetworkManager.Singleton.OnServerStarted += SpawnEnergyCubeStart;
     }
 
-    private void SpawnFoodStart()
+    private void SpawnEnergyCubeStart()
     {
-        NetworkManager.Singleton.OnServerStarted -= SpawnFoodStart;
+        NetworkManager.Singleton.OnServerStarted -= SpawnEnergyCubeStart;
         NetworkObjectPool.Singleton.OnNetworkSpawn();
 
         for (int i = 0; i < 30; i++)
